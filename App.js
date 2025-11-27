@@ -8,17 +8,24 @@ import AppStack from "./src/navigation/AppStack";
 
 function RootNavigator() {
   const { user } = useContext(AuthContext);
-  return user ? <AppStack /> : <AuthStack />;
+  
+  if (user) {
+    return (
+      <ItemsProvider>
+        <AppStack />
+      </ItemsProvider>
+    );
+  }
+  
+  return <AuthStack />;
 }
 
 export default function App() {
   return (
-    <AuthProvider>
-      <ItemsProvider>
-        <NavigationContainer>
-          <RootNavigator />
-        </NavigationContainer>
-      </ItemsProvider>
-    </AuthProvider>
+    <NavigationContainer>
+      <AuthProvider>
+        <RootNavigator />
+      </AuthProvider>
+    </NavigationContainer>
   );
 }

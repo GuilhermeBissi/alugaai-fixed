@@ -21,28 +21,28 @@ export default function LoginScreen({ navigation }) {
 
   const validateForm = () => {
     const newErrors = {};
-    
+
     if (!email.trim()) {
       newErrors.email = "Email é obrigatório";
     } else if (!/\S+@\S+\.\S+/.test(email)) {
       newErrors.email = "Email inválido";
     }
-    
+
     if (!password) {
       newErrors.password = "Senha é obrigatória";
     } else if (password.length < 6) {
       newErrors.password = "Senha deve ter no mínimo 6 caracteres";
     }
-    
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
   const handleLogin = async () => {
     if (!validateForm()) return;
-    
+
     setLoading(true);
-    
+
     try {
       const success = await signIn({ email, password });
       if (!success) {
@@ -56,14 +56,14 @@ export default function LoginScreen({ navigation }) {
   };
 
   return (
-    <KeyboardAvoidingView 
+    <KeyboardAvoidingView
       style={styles.container}
       behavior={Platform.OS === "ios" ? "padding" : "height"}
     >
       <View style={styles.card}>
         <Text style={styles.title}>aluga.ai</Text>
         <Text style={styles.subtitle}>Alugue e compartilhe itens com segurança</Text>
-        
+
         <View style={styles.inputContainer}>
           <TextInput
             value={email}
@@ -96,9 +96,9 @@ export default function LoginScreen({ navigation }) {
           {errors.password && <Text style={styles.errorText}>{errors.password}</Text>}
         </View>
 
-        <TouchableOpacity 
+        <TouchableOpacity
           onPress={handleLogin}
-          style={[styles.button, loading && styles.buttonDisabled]} 
+          style={[styles.button, loading && styles.buttonDisabled]}
           disabled={loading}
         >
           {loading ? (
@@ -107,6 +107,13 @@ export default function LoginScreen({ navigation }) {
             <Text style={styles.buttonText}>Entrar</Text>
           )}
         </TouchableOpacity>
+
+        <View style={styles.footer}>
+          <Text style={styles.footerText}>Não tem uma conta? </Text>
+          <TouchableOpacity onPress={() => navigation.navigate('Register')}>
+            <Text style={styles.link}>Cadastre-se</Text>
+          </TouchableOpacity>
+        </View>
       </View>
     </KeyboardAvoidingView>
   );
@@ -177,4 +184,20 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     fontSize: 16,
   },
+
+  footer: {
+  flexDirection: 'row',
+  justifyContent: 'center',
+  marginTop: 20,
+  alignItems: 'center',
+},
+footerText: {
+  color: '#94a3b8',
+  fontSize: 14,
+},
+link: {
+  color: '#06b6d4',
+  fontSize: 14,
+  fontWeight: '600',
+},
 });
