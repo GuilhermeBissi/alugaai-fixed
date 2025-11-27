@@ -6,24 +6,26 @@ export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
 
   const signIn = async ({ email, password }) => {
-    // Validação completa
+    // Validação de login
     if (email && password && password.length >= 6) {
-      setUser({ id: "1", name: "Usuário Demo", email });
+      const userData = { id: "1", name: "Usuário Demo", email };
+      setUser(userData);
       return true;
     }
     return false;
   };
 
   const signUp = async ({ name, email, password }) => {
-    // Validação para registro
+    // Validação de cadastro
     if (name && email && password && password.length >= 6) {
-      setUser({ id: "1", name, email });
+      const userData = { id: Date.now().toString(), name, email };
+      setUser(userData);
       return true;
     }
     return false;
   };
 
-  const signOut = async () => {
+  const signOut = () => {
     setUser(null);
   };
 

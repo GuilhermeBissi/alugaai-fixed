@@ -1,8 +1,8 @@
-// App.js
 import React, { useContext } from "react";
 import { NavigationContainer } from "@react-navigation/native";
 import { AuthProvider, AuthContext } from "./src/context/AuthContext";
 import { ItemsProvider } from "./src/context/ItemsContext";
+import { RentalsProvider } from "./src/context/RentalsContext";
 import AuthStack from "./src/navigation/AuthStack";
 import AppStack from "./src/navigation/AppStack";
 
@@ -12,7 +12,9 @@ function RootNavigator() {
   if (user) {
     return (
       <ItemsProvider>
-        <AppStack />
+        <RentalsProvider>
+          <AppStack />
+        </RentalsProvider>
       </ItemsProvider>
     );
   }
