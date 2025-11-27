@@ -1,60 +1,75 @@
 import React, { useState, useContext } from "react";
-import { 
-  View, 
-  Text, 
-  Image, 
-  TouchableOpacity, 
-  StyleSheet, 
-  SafeAreaView, 
+import {
+  View,
+  Text,
+  Image,
+  TouchableOpacity,
+  StyleSheet,
+  SafeAreaView,
   ScrollView,
-  Alert,
   Modal,
   TextInput
 } from "react-native";
 import { AuthContext } from "../context/AuthContext";
 import { RentalsContext } from "../context/RentalsContext";
+import { showAlert } from "../utils/alert";
 
-export default function ItemDetails({ route, navigation }){
+export default function ItemDetails({ route, navigation }) {
   const { item } = route.params || {};
   const { user } = useContext(AuthContext);
   const { createRental } = useContext(RentalsContext);
-  
+
   const [modalVisible, setModalVisible] = useState(false);
   const [days, setDays] = useState("1");
+  const [loading, setLoading] = useState(false);
 
   // Extrai o valor numérico do preço (ex: "R$ 25/dia" -> 25)
   const pricePerDay = parseFloat(item?.price?.replace(/[^\d,]/g, '').replace(',', '.')) || 0;
 
-  const handleRent = () => {
+  const handleRent = async () => {
     const numDays = parseInt(days) || 1;
     const totalPrice = pricePerDay * numDays;
 
-    // Criar aluguel
-    const rental = createRental({
-      item,
-      userId: user.id,
-      userName: user.name,
-      startDate: new Date().toISOString(),
-      endDate: new Date(Date.now() + numDays * 24 * 60 * 60 * 1000).toISOString(),
-      totalDays: numDays,
-      totalPrice: `R$ ${totalPrice.toFixed(2).replace('.', ',')}`,
-    });
+    setLoading(true);
 
-    setModalVisible(false);
-    Alert.alert(
-      "Solicitação enviada! 🎉",
-      `Seu pedido de aluguel foi criado.\n\nTotal: R$ ${totalPrice.toFixed(2).replace('.', ',')}\nPeríodo: ${numDays} dia(s)`,
-      [
-        {
-          text: "Ver meus aluguéis",
-          onPress: () => navigation.navigate('MyRentals')
-        },
-        {
-          text: "OK",
-          onPress: () => navigation.goBack()
-        }
-      ]
-    );
+    try {
+      // ✅ CORREÇÃO: Adicionar await e verificar sucesso
+      const result = await createRental({
+        itemId: item.id,
+        itemTitle: item.title,
+        ownerId: item.ownerId,
+        ownerName: item.ownerName,
+        startDate: new Date().toISOString(),
+        endDate: new Date(Date.now() + numDays * 24 * 60 * 60 * 1000).toISOString(),
+        totalDays: numDays,
+        totalPrice: `R$ ${totalPrice.toFixed(2).replace('.', ',')}`,
+      });
+
+      if (result.success) {
+        setModalVisible(false);
+        showAlert(
+          "Solicitação enviada! 🎉",
+          `Seu pedido de aluguel foi enviado para ${item.ownerName}.\n\nTotal: R$ ${totalPrice.toFixed(2).replace('.', ',')}\nPeríodo: ${numDays} dia(s)`,
+          [
+            {
+              text: "Ver meus aluguéis",
+              onPress: () => navigation.navigate('MyRentals')
+            },
+            {
+              text: "OK",
+              onPress: () => navigation.goBack()
+            }
+          ]
+        );
+      } else {
+        showAlert("Erro", "Não foi possível enviar a solicitação");
+      }
+    } catch (error) {
+      console.error("Erro ao criar aluguel:", error);
+      showAlert("Erro", "Ocorreu um erro ao enviar a solicitação");
+    } finally {
+      setLoading(false);
+    }
   };
 
   const totalPrice = (parseFloat(days) || 1) * pricePerDay;
@@ -64,7 +79,7 @@ export default function ItemDetails({ route, navigation }){
       <ScrollView style={styles.scrollView}>
         <View style={styles.content}>
           {/* Botão Voltar */}
-          <TouchableOpacity 
+          <TouchableOpacity
             style={styles.backButton}
             onPress={() => navigation.goBack()}
           >
@@ -73,8 +88,17 @@ export default function ItemDetails({ route, navigation }){
 
           {/* Imagem */}
           <View style={styles.imagePlaceholder}>
-            {item?.image ? (
-              <Image source={{ uri: item.image }} style={styles.image} />
+            {item?.imageUrl || item?.image ? (
+              <Image
+                source={{ uri: item.imageUrl || item.image }}
+                style={styles.image}
+                onLoad={() => console.log('✅ Imagem carregou')}
+                onError={(e) => {
+                  console.log('❌ Erro ao carregar imagem');
+                  console.log('URL tentada:', item.imageUrl || item.image);
+                  console.log('Erro:', e.nativeEvent.error);
+                }}
+              />
             ) : (
               <Text style={styles.placeholderIcon}>📦</Text>
             )}
@@ -83,10 +107,17 @@ export default function ItemDetails({ route, navigation }){
           {/* Informações */}
           <Text style={styles.title}>{item?.title}</Text>
           <Text style={styles.price}>{item?.price}</Text>
-          
+
           {item?.category && (
             <View style={styles.categoryBadge}>
               <Text style={styles.categoryText}>{item.category}</Text>
+            </View>
+          )}
+
+          {item?.ownerName && (
+            <View style={styles.ownerInfo}>
+              <Text style={styles.ownerLabel}>Proprietário:</Text>
+              <Text style={styles.ownerName}>{item.ownerName}</Text>
             </View>
           )}
 
@@ -98,7 +129,7 @@ export default function ItemDetails({ route, navigation }){
           </Text>
 
           {/* Botão Alugar */}
-          <TouchableOpacity 
+          <TouchableOpacity
             style={styles.rentButton}
             onPress={() => setModalVisible(true)}
           >
@@ -145,15 +176,19 @@ export default function ItemDetails({ route, navigation }){
 
             <View style={styles.modalButtons}>
               <TouchableOpacity
-                style={styles.confirmButton}
+                style={[styles.confirmButton, loading && styles.buttonDisabled]}
                 onPress={handleRent}
+                disabled={loading}
               >
-                <Text style={styles.confirmButtonText}>Confirmar</Text>
+                <Text style={styles.confirmButtonText}>
+                  {loading ? 'Enviando...' : 'Confirmar'}
+                </Text>
               </TouchableOpacity>
 
               <TouchableOpacity
                 style={styles.cancelButton}
                 onPress={() => setModalVisible(false)}
+                disabled={loading}
               >
                 <Text style={styles.cancelButtonText}>Cancelar</Text>
               </TouchableOpacity>
@@ -166,15 +201,15 @@ export default function ItemDetails({ route, navigation }){
 }
 
 const styles = StyleSheet.create({
-  container: { 
-    flex: 1, 
-    backgroundColor: '#0b1220' 
+  container: {
+    flex: 1,
+    backgroundColor: '#0b1220'
   },
   scrollView: {
     flex: 1,
   },
-  content: { 
-    padding: 20 
+  content: {
+    padding: 20
   },
   backButton: {
     marginBottom: 16,
@@ -184,32 +219,31 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
   },
-  imagePlaceholder: { 
-    height: 250, 
-    borderRadius: 12, 
-    backgroundColor: '#1e293b', 
-    justifyContent: 'center', 
-    alignItems: 'center', 
+  imagePlaceholder: {
+    height: 250,
+    borderRadius: 12,
+    backgroundColor: '#1e293b',
+    justifyContent: 'center',
+    alignItems: 'center',
     marginBottom: 20,
     overflow: 'hidden',
   },
   image: {
     width: '100%',
     height: '100%',
-    resizeMode: 'cover',
   },
   placeholderIcon: {
     fontSize: 64,
   },
-  title: { 
-    color: '#fff', 
-    fontSize: 24, 
+  title: {
+    color: '#fff',
+    fontSize: 24,
     fontWeight: '800',
     marginBottom: 8,
   },
-  price: { 
-    color: '#06b6d4', 
-    fontWeight: '700', 
+  price: {
+    color: '#06b6d4',
+    fontWeight: '700',
     fontSize: 22,
     marginBottom: 12,
   },
@@ -219,11 +253,26 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     borderRadius: 6,
     alignSelf: 'flex-start',
-    marginBottom: 16,
+    marginBottom: 12,
   },
   categoryText: {
     color: '#94a3b8',
     fontSize: 12,
+    fontWeight: '600',
+  },
+  ownerInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 16,
+    gap: 8,
+  },
+  ownerLabel: {
+    color: '#94a3b8',
+    fontSize: 14,
+  },
+  ownerName: {
+    color: '#fff',
+    fontSize: 14,
     fontWeight: '600',
   },
   divider: {
@@ -237,21 +286,21 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     marginBottom: 8,
   },
-  description: { 
-    color: '#94a3b8', 
+  description: {
+    color: '#94a3b8',
     marginBottom: 32,
     lineHeight: 22,
     fontSize: 15,
   },
-  rentButton: { 
-    backgroundColor: '#06b6d4', 
-    padding: 16, 
-    borderRadius: 12, 
+  rentButton: {
+    backgroundColor: '#06b6d4',
+    padding: 16,
+    borderRadius: 12,
     alignItems: 'center',
     marginBottom: 20,
   },
-  rentText: { 
-    color: '#021024', 
+  rentText: {
+    color: '#021024',
     fontWeight: '800',
     fontSize: 16,
   },
@@ -358,5 +407,8 @@ const styles = StyleSheet.create({
     color: '#94a3b8',
     fontWeight: '600',
     fontSize: 16,
+  },
+  buttonDisabled: {
+    opacity: 0.6,
   },
 });

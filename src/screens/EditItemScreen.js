@@ -1,4 +1,5 @@
-import React, { useState, useContext } from 'react';
+// screens/EditItemScreen.js
+import React, { useState, useContext, useEffect } from 'react';
 import {
   View,
   Text,
@@ -8,9 +9,9 @@ import {
   StyleSheet,
   SafeAreaView,
   Image,
+  Alert,
 } from 'react-native';
 import { ItemsContext } from '../context/ItemsContext';
-import { AuthContext } from '../context/AuthContext';
 import { showAlert } from '../utils/alert';
 
 let ImagePicker = null;
@@ -20,14 +21,15 @@ try {
   console.warn('expo-image-picker não instalado');
 }
 
-export default function CreateItemScreen({ navigation }) {
-  const { user } = useContext(AuthContext);
-  const { addItem } = useContext(ItemsContext);
-  const [title, setTitle] = useState('');
-  const [description, setDescription] = useState('');
-  const [price, setPrice] = useState('');
-  const [category, setCategory] = useState('');
-  const [imageUri, setImageUri] = useState(null);
+export default function EditItemScreen({ navigation, route }) {
+  const { item } = route.params;
+  const { updateItem } = useContext(ItemsContext);
+  
+  const [title, setTitle] = useState(item.title);
+  const [description, setDescription] = useState(item.description);
+  const [price, setPrice] = useState(item.price.replace(/[^\d,]/g, '').replace(',', '.'));
+  const [category, setCategory] = useState(item.category);
+  const [imageUri, setImageUri] = useState(item.imageUrl);
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
   const [showCategoryPicker, setShowCategoryPicker] = useState(false);
@@ -44,29 +46,29 @@ export default function CreateItemScreen({ navigation }) {
 
   const validateForm = () => {
     const newErrors = {};
-
+    
     if (!title.trim()) {
       newErrors.title = 'Título é obrigatório';
     } else if (title.trim().length < 3) {
       newErrors.title = 'Título deve ter no mínimo 3 caracteres';
     }
-
+    
     if (!description.trim()) {
       newErrors.description = 'Descrição é obrigatória';
     } else if (description.trim().length < 10) {
       newErrors.description = 'Descrição deve ter no mínimo 10 caracteres';
     }
-
+    
     if (!price) {
       newErrors.price = 'Preço é obrigatório';
     } else if (isNaN(price) || parseFloat(price) <= 0) {
       newErrors.price = 'Preço deve ser um valor válido';
     }
-
+    
     if (!category) {
       newErrors.category = 'Selecione uma categoria';
     }
-
+    
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -78,7 +80,7 @@ export default function CreateItemScreen({ navigation }) {
     }
 
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-
+    
     if (status !== 'granted') {
       showAlert('Permissão negada', 'Precisamos de permissão para acessar suas fotos');
       return;
@@ -98,30 +100,38 @@ export default function CreateItemScreen({ navigation }) {
 
   const handleSubmit = async () => {
     if (!validateForm()) return;
-
+    
     setLoading(true);
-
+    
     try {
-      const result = await addItem({
+      // Montar objeto de atualização
+      const updates = {
         title: title.trim(),
         description: description.trim(),
         price: `R$ ${parseFloat(price).toFixed(2).replace('.', ',')}/dia`,
         category,
-        imageUrl: imageUri,
-      });
+      };
+
+      // Se a imagem mudou (nova URI diferente da original)
+      if (imageUri !== item.imageUrl) {
+        updates.imageUrl = imageUri;
+      }
+
+      const result = await updateItem(item.id, updates);
+
       if (result.success) {
-        showAlert('Sucesso! 🎉', 'Item publicado com sucesso!', [
+        showAlert('Sucesso! 🎉', 'Item atualizado com sucesso!', [
           {
             text: 'OK',
             onPress: () => navigation.goBack()
           }
         ]);
       } else {
-        showAlert('Erro', 'Não foi possível publicar o item');
+        showAlert('Erro', 'Não foi possível atualizar o item');
       }
     } catch (error) {
-      console.error("Erro ao criar item:", error);
-      showAlert('Erro', 'Ocorreu um erro ao publicar o item');
+      console.error("Erro ao atualizar item:", error);
+      showAlert('Erro', 'Ocorreu um erro ao atualizar o item');
     } finally {
       setLoading(false);
     }
@@ -133,8 +143,8 @@ export default function CreateItemScreen({ navigation }) {
         <TouchableOpacity onPress={() => navigation.goBack()}>
           <Text style={styles.backButton}>← Voltar</Text>
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Criar Novo Item</Text>
-        <Text style={styles.headerSubtitle}>Anuncie seu item para aluguel</Text>
+        <Text style={styles.headerTitle}>Editar Item</Text>
+        <Text style={styles.headerSubtitle}>Atualize as informações do seu item</Text>
       </View>
 
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
@@ -145,10 +155,10 @@ export default function CreateItemScreen({ navigation }) {
               <View style={styles.imagePreviewContainer}>
                 <Image source={{ uri: imageUri }} style={styles.imagePreview} />
                 <TouchableOpacity
-                  style={styles.removeImageBtn}
-                  onPress={() => setImageUri(null)}
+                  style={styles.changeImageBtn}
+                  onPress={pickImage}
                 >
-                  <Text style={styles.removeImageText}>✕</Text>
+                  <Text style={styles.changeImageText}>📷 Trocar</Text>
                 </TouchableOpacity>
               </View>
             ) : (
@@ -188,7 +198,7 @@ export default function CreateItemScreen({ navigation }) {
             <Text style={styles.pickerArrow}>{showCategoryPicker ? '▲' : '▼'}</Text>
           </TouchableOpacity>
           {errors.category && <Text style={styles.errorText}>{errors.category}</Text>}
-
+          
           {showCategoryPicker && (
             <View style={styles.categoryList}>
               {categories.map((cat) => (
@@ -255,7 +265,7 @@ export default function CreateItemScreen({ navigation }) {
             disabled={loading}
           >
             <Text style={styles.submitButtonText}>
-              {loading ? 'Publicando...' : 'Publicar Item'}
+              {loading ? 'Salvando...' : 'Salvar Alterações'}
             </Text>
           </TouchableOpacity>
 
@@ -347,20 +357,18 @@ const styles = StyleSheet.create({
     height: '100%',
     resizeMode: 'cover',
   },
-  removeImageBtn: {
+  changeImageBtn: {
     position: 'absolute',
-    top: 12,
+    bottom: 12,
     right: 12,
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: '#ef4444',
-    justifyContent: 'center',
-    alignItems: 'center',
+    backgroundColor: '#06b6d4',
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderRadius: 8,
   },
-  removeImageText: {
-    color: '#fff',
-    fontSize: 16,
+  changeImageText: {
+    color: '#021024',
+    fontSize: 14,
     fontWeight: 'bold',
   },
   inputGroup: {

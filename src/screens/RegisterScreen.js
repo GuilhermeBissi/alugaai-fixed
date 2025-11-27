@@ -8,10 +8,10 @@ import {
   ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
-  Alert,
   ScrollView
 } from "react-native";
 import { AuthContext } from "../context/AuthContext";
+import { showAlert } from "../utils/alert";
 
 export default function RegisterScreen({ navigation }) {
   const { signUp } = useContext(AuthContext);
@@ -59,12 +59,14 @@ export default function RegisterScreen({ navigation }) {
     setLoading(true);
     
     try {
-      const success = await signUp({ name, email, password });
-      if (!success) {
-        Alert.alert("Erro", "Erro ao criar conta. Tente novamente.");
+      const result = await signUp(email.trim(), password, name.trim());
+      
+      if (!result.success) {
+        showAlert("Erro", result.error || "Erro ao criar conta. Tente novamente.");
       }
     } catch (error) {
-      Alert.alert("Erro", "Ocorreu um erro ao criar a conta");
+      console.error("Erro no registro:", error);
+      showAlert("Erro", "Ocorreu um erro ao criar a conta");
     } finally {
       setLoading(false);
     }

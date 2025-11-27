@@ -8,9 +8,9 @@ import {
   ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
-  Alert
 } from "react-native";
 import { AuthContext } from "../context/AuthContext";
+import { showAlert } from "../utils/alert";
 
 export default function LoginScreen({ navigation }) {
   const { signIn } = useContext(AuthContext);
@@ -44,12 +44,14 @@ export default function LoginScreen({ navigation }) {
     setLoading(true);
 
     try {
-      const success = await signIn({ email, password });
-      if (!success) {
-        Alert.alert("Erro", "Email ou senha incorretos");
+      const result = await signIn(email.trim(), password);
+      
+      if (!result.success) {
+        showAlert("Erro", "Email ou senha incorretos");
       }
     } catch (error) {
-      Alert.alert("Erro", "Ocorreu um erro ao fazer login");
+      console.error("Erro no login:", error);
+      showAlert("Erro", "Ocorreu um erro ao fazer login");
     } finally {
       setLoading(false);
     }
@@ -61,7 +63,7 @@ export default function LoginScreen({ navigation }) {
       behavior={Platform.OS === "ios" ? "padding" : "height"}
     >
       <View style={styles.card}>
-        <Text style={styles.title}>aluga.ai</Text>
+        <Text style={styles.title}>AlugaAi</Text>
         <Text style={styles.subtitle}>Alugue e compartilhe itens com segurança</Text>
 
         <View style={styles.inputContainer}>
@@ -184,20 +186,19 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     fontSize: 16,
   },
-
   footer: {
-  flexDirection: 'row',
-  justifyContent: 'center',
-  marginTop: 20,
-  alignItems: 'center',
-},
-footerText: {
-  color: '#94a3b8',
-  fontSize: 14,
-},
-link: {
-  color: '#06b6d4',
-  fontSize: 14,
-  fontWeight: '600',
-},
+    flexDirection: 'row',
+    justifyContent: 'center',
+    marginTop: 20,
+    alignItems: 'center',
+  },
+  footerText: {
+    color: '#94a3b8',
+    fontSize: 14,
+  },
+  link: {
+    color: '#06b6d4',
+    fontSize: 14,
+    fontWeight: '600',
+  },
 });

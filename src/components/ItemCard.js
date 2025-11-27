@@ -6,8 +6,17 @@ export default function ItemCard({ item, onPress }) {
   return (
     <TouchableOpacity style={styles.card} onPress={onPress}>
       <View style={styles.imagePlaceholder}>
-        {item.image ? (
-          <Image source={{ uri: item.image }} style={styles.image} />
+        {item.imageUrl ? (
+          <Image 
+            source={{ uri: item.imageUrl }} 
+            style={styles.image}
+            resizeMode="cover"
+            onLoad={() => console.log('✅ Imagem carregou no card:', item.title)}
+            onError={(e) => {
+              console.log('❌ Erro ao carregar imagem no card:', item.title);
+              console.log('URL:', item.imageUrl);
+            }}
+          />
         ) : (
           <Text style={styles.placeholderText}>📦</Text>
         )}
@@ -16,6 +25,11 @@ export default function ItemCard({ item, onPress }) {
       <View style={styles.info}>
         <Text style={styles.title}>{item.title}</Text>
         <Text style={styles.price}>{item.price}</Text>
+        {item.category && (
+          <View style={styles.categoryBadge}>
+            <Text style={styles.categoryText}>{item.category}</Text>
+          </View>
+        )}
       </View>
     </TouchableOpacity>
   );
@@ -40,7 +54,7 @@ const styles = StyleSheet.create({
   image: {
     width: '100%',
     height: '100%',
-    resizeMode: 'cover',
+    // ⚠️ NÃO coloque resizeMode aqui (deprecado)
   },
   placeholderText: {
     fontSize: 48,
@@ -57,6 +71,19 @@ const styles = StyleSheet.create({
   price: {
     color: '#06b6d4',
     fontSize: 18,
+    fontWeight: '600',
+  },
+  categoryBadge: {
+    marginTop: 8,
+    backgroundColor: '#1e293b',
+    paddingVertical: 4,
+    paddingHorizontal: 10,
+    borderRadius: 6,
+    alignSelf: 'flex-start',
+  },
+  categoryText: {
+    color: '#94a3b8',
+    fontSize: 12,
     fontWeight: '600',
   },
 });

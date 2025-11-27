@@ -25,26 +25,22 @@ export default function HomeScreen({ navigation }) {
 
   return (
     <SafeAreaView style={styles.container}>
-      {/* Header */}
+      {/* Header Simplificado */}
       <View style={styles.header}>
-        <View>
-          <Text style={styles.welcome}>Olá, {user?.name ?? 'usuário'}</Text>
-          <Text style={styles.place}>Encontre itens perto de você</Text>
+        <View style={styles.headerLeft}>
+          <Text style={styles.welcome}>Explorar Itens 🔍</Text>
+          <Text style={styles.place}>Encontre o que você precisa</Text>
         </View>
-        <View style={styles.headerButtons}>
-          <TouchableOpacity
-            onPress={() => navigation.navigate('MyRentals')}
-            style={styles.rentalsButton}
-          >
-            <Text style={styles.rentalsButtonText}>📋</Text>
-          </TouchableOpacity>
-          <TouchableOpacity onPress={signOut} style={styles.logout}>
-            <Text style={styles.logoutText}>Sair</Text>
-          </TouchableOpacity>
-        </View>
+        
+        {/* Apenas botão de Sair */}
+        <TouchableOpacity onPress={signOut} style={styles.logoutButton}>
+          <Text style={styles.logoutText}>Sair</Text>
+        </TouchableOpacity>
       </View>
+
       {/* Barra de Busca */}
       <View style={styles.searchContainer}>
+        <Text style={styles.searchIcon}>🔍</Text>
         <TextInput
           style={styles.searchInput}
           placeholder="Buscar itens ou categorias..."
@@ -66,7 +62,7 @@ export default function HomeScreen({ navigation }) {
       <FlatList
         data={filteredItems}
         keyExtractor={i => i.id}
-        contentContainerStyle={{ padding: 16, flexGrow: 1 }}
+        contentContainerStyle={{ padding: 16, paddingBottom: 80, flexGrow: 1 }}
         renderItem={({ item }) => (
           <ItemCard
             item={item}
@@ -76,14 +72,8 @@ export default function HomeScreen({ navigation }) {
         ListHeaderComponent={
           <View style={styles.headerSection}>
             <Text style={styles.sectionTitle}>
-              {searchQuery ? `Resultados (${filteredItems.length})` : 'Itens disponíveis'}
+              {searchQuery ? `Resultados (${filteredItems.length})` : 'Todos os itens'}
             </Text>
-            <TouchableOpacity
-              style={styles.addButton}
-              onPress={() => navigation.navigate('CreateItem')}
-            >
-              <Text style={styles.addButtonText}>+ Adicionar</Text>
-            </TouchableOpacity>
           </View>
         }
         ListEmptyComponent={
@@ -103,9 +93,9 @@ export default function HomeScreen({ navigation }) {
             {!searchQuery && (
               <TouchableOpacity
                 style={styles.emptyButton}
-                onPress={() => navigation.navigate('CreateItem')}
+                onPress={() => navigation.navigate('MyItems')}
               >
-                <Text style={styles.emptyButtonText}>Criar primeiro item</Text>
+                <Text style={styles.emptyButtonText}>Ir para Meus Itens</Text>
               </TouchableOpacity>
             )}
           </View>
@@ -128,24 +118,29 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: '#1e293b',
   },
+  headerLeft: {
+    flex: 1,
+    marginRight: 12,
+  },
   welcome: {
     color: '#fff',
     fontSize: 20,
-    fontWeight: '700'
+    fontWeight: '800'
   },
   place: {
     color: '#94a3b8',
-    marginTop: 2,
+    marginTop: 4,
+    fontSize: 13,
   },
-  logout: {
-    backgroundColor: '#111827',
-    padding: 8,
-    paddingHorizontal: 12,
-    borderRadius: 8
+  logoutButton: {
+    backgroundColor: '#1e293b',
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: 8,
   },
   logoutText: {
     color: '#fff',
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: '600',
   },
   searchContainer: {
@@ -155,10 +150,17 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     position: 'relative',
   },
+  searchIcon: {
+    position: 'absolute',
+    left: 28,
+    fontSize: 18,
+    zIndex: 1,
+  },
   searchInput: {
     flex: 1,
     backgroundColor: '#0f172a',
     padding: 14,
+    paddingLeft: 44,
     paddingRight: 45,
     borderRadius: 10,
     color: '#fff',
@@ -182,9 +184,6 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   headerSection: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
     marginBottom: 16,
   },
   sectionTitle: {
@@ -239,18 +238,4 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '700',
   },
-
-  headerButtons: {
-  flexDirection: 'row',
-  gap: 8,
-},
-rentalsButton: {
-  backgroundColor: '#111827',
-  padding: 8,
-  paddingHorizontal: 12,
-  borderRadius: 8,
-},
-rentalsButtonText: {
-  fontSize: 18,
-},
 });
